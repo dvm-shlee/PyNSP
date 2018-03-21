@@ -8,7 +8,7 @@ import re, io
 
 __version__ = re.search(
     r'__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
-    io.open('pynit/__init__.py', encoding='utf_8_sig').read()
+    io.open('pynsp/__init__.py', encoding='utf_8_sig').read()
     ).group(1)
 
 __author__ = 'SungHo Lee'
@@ -22,16 +22,16 @@ setup(name='PyNSP',
       url=None,
       license='GNLv3',
       packages=find_packages(),
-      install_requires=['',
-                        ],
-      scripts=['',
-               ],
+      #install_requires=['',
+      #                  ],
+      scripts=['pynsp/pynsp',
+              ],
       classifiers=[
             # How mature is this project? Common values are
             #  3 - Alpha
             #  4 - Beta
             #  5 - Production/Stable
-            'Development Status :: 3 - Beta',
+            'Development Status :: 3 - Alpha',
 
             # Indicate who your project is intended for
             'Framework :: Jupyter',
