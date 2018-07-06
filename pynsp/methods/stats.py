@@ -1,27 +1,8 @@
-from ..tools.checker import check_dim
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.pipeline import make_pipeline
+import pandas as pd
 import numpy as np
 
-
-def by_std(data):
-    """ Normalize 1D time-course data
-    :param data:
-    :return:
-    """
-    if check_dim(data, dim=1):
-        return (data - data.mean()) / data.std()
-    else:
-        return None
-
-
-def mode_norm(data, mode=1000, decrimal=3):
-    # x, y, z, t = img.shape
-    # data = np.asarray(img.dataobj).reshape([x*y*z, t])
-    data = (data - data.mean()) * (mode / data.mean()) + mode
-    data = np.round(data, decrimal=decrimal)
-    # output = pn.ImageObj(data.reshape([x, y, z, t]), img.affine)
-    # output._header = img._header
-    # return output
-    return data
 
 def multicomp_pval_correction(pvals, c_type):
     """ p value correction for Multiple-comparison

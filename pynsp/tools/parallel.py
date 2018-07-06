@@ -1,5 +1,5 @@
 import psutil
-from pynsp.base import np
+import numpy as np
 from joblib import Parallel, delayed
 
 

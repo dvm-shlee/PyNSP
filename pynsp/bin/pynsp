@@ -39,6 +39,16 @@ def main():
                         help="index of ROI", type=int, required=True)
     seed.add_argument("-o", "--output", help="output file", type=str, required=True)
     # subparsers.set_defaults(func=seed)
+
+    nuisance = subparsers.add_parser("nuisance", help='Nuisance noise regression')
+    nuisance.add_argument("-i", "--input", help="input file", type=str, required=True)
+    nuisance.add_argument("-m", "--mask", help="mask file", type=str, required=True)
+    nuisance.add_argument("-t", "--dt", help="sampling rate", type=int, required=True)
+    nuisance.add_argument("--polort", help="polynomial regressor", type=int, default=3)
+    nuisance.add_argument("--ort", help="motion regressor", type=str, default=None)
+    nuisance.add_argument("--alff", help="bandpass filter for ALFF calculation", nargs=2,
+                          type=float, default=None)
+    nuisance.add_argument("-o", "--output", help="output file", type=str, required=True)
 #
     args = parser.parse_args()
     if args.function == 'seedpc':
@@ -53,6 +63,7 @@ def main():
                                  # args.iters, c_type = "Benjamini-Hochberg")
             filename = pn.methods.splitnifti(args.output)
             io.save_as(R, tmpobj, "{}_roi-{}.nii.gz".format(filename, tmpobj.label[idx][0]))
+
     elif args.function == 'seed':
         from pynsp.stats import seedpc2brainwise
         from pynsp.tools import io
@@ -65,6 +76,37 @@ def main():
                                  # iters=1, n_pc=None, c_type = "Benjamini-Hochberg")
             filename = pn.methods.splitnifti(args.output)
             io.save_as(R, tmpobj, "{}_roi-{}.nii.gz".format(filename, tmpobj.label[idx][0]))
+
+    elif args.function == 'nuisance':
+        from pynsp.stats import standard_denoising2brainwise as glm
+        from pynsp.tools import io
+        matrix = pn.load(args.input).get_data()
+        maskobj = pn.load(args.mask)
+        ort = pn.load(args.ort)
+        output = glm(matrix, maskobj, dt=args.dt, degree=int(args.polort),
+                     ort=ort, alff=args.alff)
+        filename = pn.methods.splitnifti(args.output)
+        print(args.alff)
+        if args.alff and isinstance(args.alff, list):
+            residual_matrix, freq, fft_matrix, alff_matrix, falff_matrix = output
+            try:
+                with open("{}_freq.txt".format(filename), 'wb') as fobj:
+                    fobj.writelines(freq)
+            except:
+                print(freq)
+            io.save_as(fft_matrix, maskobj,
+                       "{}_freq.nii.gz".format(filename), temp=False)
+            io.save_as(alff_matrix, maskobj,
+                       "{}_ALFF.nii.gz".format(filename), temp=False)
+            io.save_as(falff_matrix, maskobj,
+                       "{}_fALFF.nii.gz".format(filename), temp=False)
+            io.save_as(alff_matrix, maskobj,
+                       "{}_ALFF.nii.gz".format(filename), temp=False)
+        else:
+            residual_matrix = output
+        io.save_as(residual_matrix, maskobj,
+                   "{}.nii.gz".format(filename), temp=False)
+
     else:
         pass
 

@@ -24,7 +24,7 @@ setup(name='PyNSP',
       packages=find_packages(),
       #install_requires=['',
       #                  ],
-      scripts=['pynsp/pynsp',
+      scripts=['pynsp/bin/pynsp',
               ],
       classifiers=[
             # How mature is this project? Common values are

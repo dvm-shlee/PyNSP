@@ -1,29 +1,23 @@
-from checker import check_dim
 import numpy as np
 
 
-def extract_ts(matrix, coord):
-    """ Extract time-series data from given image data matrix and it's coordinate
+def extract_ts(img_data, coord):
+    """
+    Extract time-series data from given image data matrix and it's coordinate
 
-    :param matrix: 3D+time data matrix
+    :param img_data: 3D+time data matrix
     :param coord: 3D Euclidean coordinate
-    :type matrix: numpy.ndarray
+    :type img_data: numpy.ndarray
     :type coord: list
     :return: one dimentional time-series data
     :rtype return: numpy.array
     """
-    if check_dim(matrix, dim=4):
-        try:
-            x, y, z = coord
-            return matrix[x, y, z, :]
-        except Exception as exc:
-            pass
-    else:
-        return None
+    return img_data[x, y, z, :]
 
 
 def extract_seed_ts(matrix, tmpobj, idx, n_voxels='Max', iters=None):
-    """ Extract time-series data from ROI defined on Atlas.
+    """
+    Extract time-series data from ROI defined on Atlas.
     if size are provided, data will be collected from
     the randomly sampled voxels with given size.
 
