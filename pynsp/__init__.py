@@ -1,9 +1,6 @@
-from tools import signal as Signal
-from stats.regression import standard_denoising
-from stats.rsparam import calc_ALFF
-from core.ui import *
-from methods.signal import *
+from . import core, methods
+from .core.ui import QC, RSFC
 
-__version__ = '0.0.2'
+__version__ = '0.1.0'
 
-__all__ = ['Signal', 'standard_denoising', 'calc_ALFF', 'QC', 'TimeSeriesHandler']
+__all__ = []
