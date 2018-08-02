@@ -46,7 +46,8 @@ def avail_cpu():
     return int(cpu_count * (1 - ((cpu_percent / cpu_count) * 2)/100))
 
 
-def extract_ts_from_coordinates(img_data, indices, n_voxels='Max', iters=None, replace=False):
+def extract_ts_from_coordinates(img_data, indices, n_voxels='Max',
+                                iters=None, replace=False):
     """
     Extract time-series data from ROI defined on Atlas.
     if size are provided, data will be collected from
@@ -56,25 +57,25 @@ def extract_ts_from_coordinates(img_data, indices, n_voxels='Max', iters=None, r
     :param indices: All coordinates inside the roi
     :param n_voxels: number of voxels that want to sample (default = 'Max')
     :param iters: number of iteration to perform random voxel sampling
-    :type img_data: numpy.ndarray
+    :param replace: Whether the sample is with or without replacement
+    :type img_data:
     :type indices: 2D list
     :type n_voxels: int or 'Max'
     :type iters: int
+    :type replace: boolean
     :return: 2 dimentional time-series data (averaged time-series data,
                                              number of iteration)
     :rtype return: numpy.ndarray
     """
     # The below code allows to use single coordinate index instead of set of indices
-    if isinstance(indices, list) and isinstance(indices[0], int):
-        indices = np.asarray([indices])
-    elif isinstance(indices, list) and isinstance(indices[0], list):
-        indices = np.asarray(indices)
+    indices = np.asarray(indices)
+    if len(indices.shape) is 1:
+        indices = indices[np.newaxis, :]
     else:
-        pass
-
+        indices = np.asarray(indices)
     num_ind = indices.shape[0]
 
-    if n_voxels == 'Max':
+    if n_voxels is 'Max':
         n_voxels = num_ind
 
     if iters is not None:
@@ -82,8 +83,8 @@ def extract_ts_from_coordinates(img_data, indices, n_voxels='Max', iters=None, r
         for i in range(iters):
             rand_index = sorted(np.random.choice(num_ind, size=n_voxels, replace=replace))
             indx, indy, indz = indices[rand_index].T.tolist()
-            result[:, i] = img_data[indx, indy, indz, :].mean(0)
+            result[:, i] = img_data[indx, indy, indz, :]
     else:
-        indx, indy, indz = indices[np.random.choice(num_ind, size=n_voxels)].T.tolist()
-        result = img_data[indx, indy, indz, :].mean(0)
+        indx, indy, indz = indices[np.random.choice(num_ind, size=n_voxels, replace=replace)].T.tolist()
+        result = img_data[indx, indy, indz, :]
     return result
