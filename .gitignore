@@ -1,0 +1,13 @@
+*.pyc
+*.whl
+.idea/
+.idea/*
+dist/
+dist/*
+build/
+build/*
+PyNIT.egg-info/
+PyNIT.egg-info/*
+docs/
+docs/*
+.DS_Store
