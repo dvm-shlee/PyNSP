@@ -79,12 +79,114 @@ def extract_ts_from_coordinates(img_data, indices, n_voxels='Max',
         n_voxels = num_ind
 
     if iters is not None:
-        result = np.zeros((img_data.shape[-1], iters))
+        result = []
         for i in range(iters):
+            # result = np.zeros((img_data.shape[-1], num_ind))
             rand_index = sorted(np.random.choice(num_ind, size=n_voxels, replace=replace))
             indx, indy, indz = indices[rand_index].T.tolist()
-            result[:, i] = img_data[indx, indy, indz, :]
+            result.append(img_data[indx, indy, indz, :])
+        result = np.concatenate(result, axis=0)
     else:
         indx, indy, indz = indices[np.random.choice(num_ind, size=n_voxels, replace=replace)].T.tolist()
         result = img_data[indx, indy, indz, :]
     return result
+
+def save_atlas_label(label, filename):
+    """ Save label instance to file
+
+    :param label:
+    :param filename:
+    :return:
+    """
+    with open(filename, 'w') as f:
+        line = list()
+        for idx in label.keys():
+            roi, rgb = label[idx]
+            rgb = np.array(rgb) * 255
+            rgb = list(rgb.astype(int))
+            r, g, b = rgb
+            if idx == 0:
+                line = '{:>5}   {:>3}  {:>3}  {:>3}        0  0  0    "{}"\n'.format(idx, r, g, b, roi)
+            else:
+                line = '{}{:>5}   {:>3}  {:>3}  {:>3}        1  1  0    "{}"\n'.format(line, idx, r, g, b, roi)
+        f.write(line)
+
+
+def splitnifti(path):
+    import os
+    while '.nii' in path:
+        path = os.path.splitext(path)[0]
+    return str(path)
+
+
+def combine_atlas(path):
+    """
+
+    :param path:
+    :return:
+    """
+    import os
+    from nibabel import Nifti1Image as ImageObj
+    affine = list()
+
+    label = dict()
+    atlasdata = None
+    list_of_rois = [img for img in os.listdir(path) if '.nii' in img]
+    rgbs = np.random.rand(len(list_of_rois), 3)
+    label[0] = 'Clear Label', [.0, .0, .0]
+
+    for idx, img in enumerate(list_of_rois):
+        imageobj = ImageObj.load(os.path.join(path, img))
+        affine.append(imageobj.affine)
+        if idx == 0:
+            atlasdata = np.asarray(imageobj.dataobj)
+        else:
+            atlasdata += np.asarray(imageobj.dataobj) * (idx + 1)
+        label[idx + 1] = splitnifti(img), rgbs[idx]
+    atlas = ImageObj(atlasdata, affine[0])
+    return atlas, label
+
+
+def parsing_atlas(path):
+    """Parsing atlas imageobj and label
+
+    :param path:
+    :return:
+    """
+    import os
+    import nibabel as nib
+    atlas = nib.load(path)
+
+    filename = os.path.basename(splitnifti(path))
+    dirname = os.path.dirname(path)
+
+    label_cand = [f for f in os.listdir(dirname) if filename in f]
+    if label_cand is None:
+        raise Exception
+    else:
+        label_path = [f for f in label_cand
+                      if os.path.splitext(f)[-1] in ['.lbl', '.label', '.txt']][0]
+        if label_path is None:
+            raise Exception
+    label_dic, rgb_dic = parse_label(label_path)
+    return atlas, label_dic, rgb_dic
+
+
+def parse_label(path):
+    label_dic = dict()
+    rgb_dic = dict()
+    pattern = r'^\s+(?P<idx>\d+)\s+(?P<R>\d+)\s+(?P<G>\d+)\s+(?P<B>\d+)\s+' \
+              r'(\d+|\d+\.\d+)\s+\d+\s+\d+\s+"(?P<roi>.*)$'
+    with open(path, 'r') as labelfile:
+        import re
+        for line in labelfile:
+            if re.match(pattern, line):
+                idx = int(re.sub(pattern, r'\g<idx>', line))
+                roi = re.sub(pattern, r'\g<roi>', line)
+                roi = roi.split('"')[0]
+                rgb = re.sub(pattern, r'\g<R>\s\g<G>\s\g<B>', line)
+                rgb = rgb.split(r'\s')
+                rgb = np.array(map(float, rgb)) / 255
+                label_dic[idx] = roi
+                rgb_dic[idx] = rgb
+    return label_dic, rgb_dic

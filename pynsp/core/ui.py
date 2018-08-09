@@ -80,7 +80,7 @@ class RSFC(ImageHandler):
         import time
         import numpy as np
 
-        mode, decimals, order = 1000, 3, 3
+        mode, decimals, order = 1000, 3, self._order
 
         for k, item in kwargs.items():
             if k is 'mode':
@@ -191,7 +191,7 @@ class RSFC(ImageHandler):
         import time
 
         atlas = load(atlas_path).get_data()
-        list_rois = list(set(atlas.flatten()))[1:]
+        list_rois = map(int, list(set(atlas.flatten()))[1:])
         for roi in list_rois:
             print("Calculating brain-wise connectivity for {}..".format(atlas_label[roi]))
             start_time = time.time()
@@ -243,21 +243,27 @@ class RSFC(ImageHandler):
         self[step2] = ALFF
         self[step3] = fALFF
 
+    @property
+    def processed(self):
+        return self._processed.keys()
+
 
 class QC(ImageHandler, TimeSeriesHandler):
     """
     Processor object to calculate Quality Control parameters.
     """
-    def __init__(self, img_path, mparam_path, mask_path=None, **kwargs):
+    def __init__(self, img_path, mparam_path=None, mask_path=None,
+                 calc_all=False, **kwargs):
         ImageHandler.__init__(self, img_path)
         TimeSeriesHandler.__init__(self, mparam_path)
         self._processed = dict()
         self.set_brainmask(mask_path=mask_path)
+
         self.set_columns(['Roll', 'Pitch', 'Yaw', 'dI-S', 'dR-L', 'dA-P'])
         self._prep_img(**kwargs)
         self._prep_volreg(**kwargs)
-        self._calc_FD()
-        self._calc_DVARS()
+        if calc_all is True:
+            self.calc_ALL()
 
     @property
     def apply(self):        # Deactivating apply function
@@ -286,6 +292,10 @@ class QC(ImageHandler, TimeSeriesHandler):
     @property
     def VWI(self):
         return self._processed['VWI']
+
+    @property
+    def STD(self):
+        return self._processed['STD']
 
     def _prep_img(self, **kwargs):
 
@@ -328,11 +338,16 @@ class QC(ImageHandler, TimeSeriesHandler):
         from ..methods.qc import convert_radian2distance
         self._dataframe = convert_radian2distance(self.df, r)
 
-    def _calc_FD(self):
+    def calc_ALL(self):
+        self.calc_FD()
+        self.calc_DVARS()
+        self.calc_STD()
+
+    def calc_FD(self):
         from ..methods.qc import calc_displacements
         self['FD'] = self._apply_func2ts(calc_displacements)
 
-    def _calc_DVARS(self):
+    def calc_DVARS(self):
         from ..methods.signal import demean
         from ..methods.qc import calc_BOLD_properties
         self['Demeaned'] = self.apply_img(demean, level='timeseries')
@@ -340,6 +355,13 @@ class QC(ImageHandler, TimeSeriesHandler):
                                                     indices=self.mask,
                                                     level='image',
                                                     key='Demeaned')
+
+    def calc_STD(self):
+        from ..methods.qc import map_STD
+        self['STD'] = self.apply_img(map_STD,
+                                     indices=self.mask,
+                                     level='image')
+
 
     def plot(self, *args, **kwargs):
         import pandas as pd
@@ -360,7 +382,8 @@ class QC(ImageHandler, TimeSeriesHandler):
                   '- DVgs (BOLD)  : DVARS of global signal in brain mask',
                   '- SDgs (BOLD)  : Standard deviation of signal in brain mask',
                   '- GS   (BOLD)  : Demeaned global signal in brain mask\n',
-                  'Data of [{}.VWI] : Voxel-wise intensities fluctuation'.format(self.__class__.__name__)
+                  'Data of [{}.VWI] : Voxel-wise intensities fluctuation (2D)'.format(self.__class__.__name__),
+                  'Data of [{}.STD] : Brain-wise Standard Deviation(STD) (3D)'.format(self.__class__.__name__)
                   ]
         return '\n'.join(output)
 

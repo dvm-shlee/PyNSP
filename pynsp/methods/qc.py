@@ -44,17 +44,11 @@ def calc_BOLD_properties(img_data, indices):
     return output, vw_intensity
 
 
-def calc_STD(img_obj, img_data):
+def map_STD(img_data, indices):
     import numpy as np
-    import pandas as pd
     x, y, z, t = img_data.shape
-    flatten_data = img_data.reshape([x * y * z, t])
-    output = np.zeros(t)
+    output = np.zeros([x, y, z])
 
-
-    for dt in range(t):
-        vol = flatten_data[:, dt]
-        vol = vol[np.nonzero(vol)]
-        output[dt] = vol.std()
-    df = pd.DataFrame(output, index=None, columns=['SDgs'])
-    return df
+    for i, t, k in indices:
+        output[i, t, k] = img_data[i, t, k, :].std()
+    return output
