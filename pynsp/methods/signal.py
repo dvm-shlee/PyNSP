@@ -210,9 +210,14 @@ def nuisance_regression(data, estimator, ort=None, order=3):
     design_matrix = standard_norm(design_matrix, axis=0)
 
     model = linear_regression(data, estimator, design_matrix)
-    regressor = model.predict(design_matrix)
-    regressor -= regressor.mean()
-    return np.asarray(data - regressor)
+    if isinstance(model, np.ndarray):
+        return model
+    # if model == 1:
+    #   return data
+    else:
+        regressor = model.predict(design_matrix)
+        regressor -= regressor.mean()
+        return np.asarray(data - regressor)
 
 
 # def standard_denoising2brainwise(matrix, maskobj, dt, degree=3, ort=None, alff=None):

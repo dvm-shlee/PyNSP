@@ -69,14 +69,17 @@ def main():
         obj.mparam.to_excel("{}_mparam.xlsx".format(args.output))
         obj.FD.to_excel("{}_FD.xlsx".format(args.output))
         obj.DVARS.to_excel("{}_DVARS.xlsx".format(args.output))
-        std = nib.Nifti1Image(obj.STD, nib.load(args.input).affine)
+        affine = nib.load(args.input).affine
+        std = nib.Nifti1Image(obj.STD, affine)
         std.to_filename("{}_STD.nii.gz".format(args.output))
+        snr = nib.Nifti1Image(obj.tSNR, affine)
+        snr.to_filename("{}_tSNR.nii.gz".format(args.output))
         np.savetxt("{}_VWI.txt.gz".format(args.output), obj.VWI)
 
     elif args.function == 'nuisance':
         obj = nsp.RSFC(args.input, ort_paths=args.param, mask_path=args.mask,
                        order=args.polort, band=args.band, dt=args.dt)
-        obj.nuisance_denoising(order=args.polort)
+        obj.nuisance_denoising()
         if args.band is not None:
             obj.bandpass_filtering()
         obj.save_as(args.output, obj.processed[-1])

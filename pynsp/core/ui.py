@@ -297,6 +297,10 @@ class QC(ImageHandler, TimeSeriesHandler):
     def STD(self):
         return self._processed['STD']
 
+    @property
+    def tSNR(self):
+        return self._processed['tSNR']
+
     def _prep_img(self, **kwargs):
 
         mode, decimals = None, None
@@ -342,6 +346,7 @@ class QC(ImageHandler, TimeSeriesHandler):
         self.calc_FD()
         self.calc_DVARS()
         self.calc_STD()
+        self.calc_tSNR()
 
     def calc_FD(self):
         from ..methods.qc import calc_displacements
@@ -361,6 +366,12 @@ class QC(ImageHandler, TimeSeriesHandler):
         self['STD'] = self.apply_img(map_STD,
                                      indices=self.mask,
                                      level='image')
+
+    def calc_tSNR(self):
+        from ..methods.qc import map_tSNR
+        self['tSNR'] = self.apply_img(map_tSNR,
+                                      indices=self.mask,
+                                      level='image')
 
 
     def plot(self, *args, **kwargs):
@@ -383,7 +394,8 @@ class QC(ImageHandler, TimeSeriesHandler):
                   '- SDgs (BOLD)  : Standard deviation of signal in brain mask',
                   '- GS   (BOLD)  : Demeaned global signal in brain mask\n',
                   'Data of [{}.VWI] : Voxel-wise intensities fluctuation (2D)'.format(self.__class__.__name__),
-                  'Data of [{}.STD] : Brain-wise Standard Deviation(STD) (3D)'.format(self.__class__.__name__)
+                  'Data of [{}.STD] : Brain-wise Standard Deviation(STD) (3D)'.format(self.__class__.__name__),
+                  'Data of [{}.STD] : Brain-wise temporal Signal to Noise ratio (tSNR) (3D)'.format(self.__class__.__name__)
                   ]
         return '\n'.join(output)
 

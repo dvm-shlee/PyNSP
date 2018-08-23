@@ -2,6 +2,7 @@ def linear_regression(data, estimator, design_matrix):
     import numpy as np
     if np.all(data == 0, axis=0):
         return np.zeros(data.shape)
+        # return 1
 
     else:
         # Applying regression denoising

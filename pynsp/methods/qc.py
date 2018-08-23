@@ -44,6 +44,18 @@ def calc_BOLD_properties(img_data, indices):
     return output, vw_intensity
 
 
+def map_tSNR(img_data, indices):
+    import numpy as np
+    x, y, z, t = img_data.shape
+    output = np.zeros([x, y, z])
+
+    for i, t, k in indices:
+        mean = img_data[i, t, k, :].mean()
+        std = img_data[i, t, k, :].std()
+        output[i, t, k] = mean / std
+    return output
+
+
 def map_STD(img_data, indices):
     import numpy as np
     x, y, z, t = img_data.shape
