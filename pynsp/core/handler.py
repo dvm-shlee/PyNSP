@@ -77,6 +77,7 @@ class ImageHandler(ImageBase, HandlerBase):
         else:
             img_data = self._processed[key]
         # map(np.ndarray.tolist, np.array_split(np.array(indices), 3, axis=0)) <- split indices into 3 parts
+        print(level)
         if level is 'timeseries':
             output = np.zeros(self.img_shape)
             for i, j, k in self._indices_brain:
