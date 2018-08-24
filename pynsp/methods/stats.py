@@ -7,8 +7,11 @@ def linear_regression(data, estimator, design_matrix):
     else:
         # Applying regression denoising
         model = estimator()
-        model.fit(design_matrix, data)
-        return model
+        try:
+            model.fit(design_matrix, data)
+            return model
+        except:
+            return np.zeros(data.shape)
 
 
 def calc_PearsonR(signalA, signalB, decimals=3,
