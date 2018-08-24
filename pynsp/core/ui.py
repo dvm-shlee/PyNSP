@@ -104,7 +104,7 @@ class RSFC(ImageHandler):
         self[step2] = self.apply(nuisance_regression,
                                  BayesianRidge,
                                  key=step1,
-                                 ort=orts, order=order, level='')
+                                 ort=orts, order=order, level='timeseries')
         print("Done...({} sec)".format(np.round(time.time() - start_time, decimals=3)))
 
     def bandpass_filtering(self, **kwargs):
