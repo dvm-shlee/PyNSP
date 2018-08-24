@@ -55,7 +55,7 @@ def map_connectivity_with_roi(img_data, roi_indices, brain_indices=None,
     import numpy as np
 
     img_array = np.asarray(img_data)
-    if brain_indices is not None:
+    if brain_indices is None:
         brain_indices = np.transpose(np.nonzero(img_array[:,:,:,0]))
 
     from .tools import extract_ts_from_coordinates
