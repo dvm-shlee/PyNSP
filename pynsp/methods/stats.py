@@ -75,8 +75,8 @@ def map_connectivity_with_roi(img_data, roi_indices, brain_indices=None,
     else:
         roi_signal = roi_tss.mean(0)
 
-    corr_map = np.empty(img_array.shape[:3])
-    pval_map = np.empty(img_array.shape[:3])
+    corr_map = np.zeros(img_array.shape[:3])
+    pval_map = np.zeros(img_array.shape[:3])
 
     for i, t, k in brain_indices:
         R, P = calc_PearsonR(roi_signal, img_array[i, t, k], norm=True, fisher=True)
