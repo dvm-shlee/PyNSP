@@ -138,7 +138,7 @@ class RSFC(ImageHandler):
         step = '{}.Bandpass'.format(str(n_processed).zfill(3))
         self[step] = self.apply(freqency_filter, band, dt=dt,
                                 order=order, btype=btype,
-                                key=key)
+                                key=key, level='timeseries')
         print("Done...({} sec)".format(np.round(time.time() - start_time, decimals=3)))
 
     def nuisance_denoising(self, **kwargs):
