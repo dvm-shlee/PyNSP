@@ -17,12 +17,24 @@ def calc_displacements(volreg):
 
 
 def convert_radian2distance(volreg, mean_radius):
+    """
+
+    :param volreg:
+    :param mean_radius:
+    :return:
+    """
     import numpy as np
     volreg[['Roll', 'Pitch', 'Yaw']] *= (np.pi / 180 * mean_radius)
     return volreg
 
 
 def calc_BOLD_properties(img_data, indices):
+    """
+
+    :param img_data:
+    :param indices:
+    :return:
+    """
     import numpy as np
     import pandas as pd
 
@@ -45,6 +57,12 @@ def calc_BOLD_properties(img_data, indices):
 
 
 def map_tSNR(img_data, indices):
+    """
+
+    :param img_data:
+    :param indices:
+    :return:
+    """
     import numpy as np
     x, y, z, t = img_data.shape
     output = np.zeros([x, y, z])
@@ -57,6 +75,12 @@ def map_tSNR(img_data, indices):
 
 
 def map_STD(img_data, indices):
+    """
+
+    :param img_data:
+    :param indices:
+    :return:
+    """
     import numpy as np
     x, y, z, t = img_data.shape
     output = np.zeros([x, y, z])

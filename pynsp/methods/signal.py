@@ -194,6 +194,14 @@ def window_smoothing(data, window_len=11, window='hanning'):
 
 
 def nuisance_regression(data, estimator, ort=None, order=3):
+    """
+
+    :param data:
+    :param estimator:
+    :param ort:
+    :param order:
+    :return:
+    """
     from .stats import linear_regression
     import pandas as pd
     import numpy as np
@@ -217,51 +225,3 @@ def nuisance_regression(data, estimator, ort=None, order=3):
         regressor = model.predict(design_matrix)
         regressor -= regressor.mean()
         return np.asarray(data - regressor)
-
-
-# def standard_denoising2brainwise(matrix, maskobj, dt, degree=3, ort=None, alff=None):
-#     """
-#     Nuisance regression
-#
-#     :param matrix:
-#     :param maskobj:
-#     :param dt:
-#     :param degree:
-#     :param ort:
-#     :param alff:
-#     :return:
-#     """
-#     import numpy as np
-#     indices = np.transpose(np.nonzero(maskobj._dataobj))
-#     x, y, z, t = matrix.shape
-#     residual_matrix = np.zeros([x, y, z, t])
-#     f, fft_matrix, alff_matrix, falff_matrix = None, None, None, None
-#
-#     if alff and isinstance(alff, list):
-#         from .rsfc import calc_ALFF
-#         f = calc_ALFF(matrix[x/2,y/2,z/2,:], dt, band=alff, freq=True)
-#         fft_matrix = np.zeros([x, y, z, len(f)])
-#         alff_matrix = np.zeros([x, y, z])
-#         falff_matrix = np.zeros([x, y, z])
-#
-#     for i, vcoord in enumerate(indices):
-#         xi, yi, zi = vcoord
-#         ts_data = matrix[xi, yi, zi, :]
-#         residual = standard_denoising(ts_data, degree, ort)
-#         residual_matrix[xi, yi, zi, :] = residual
-#         if alff and isinstance(alff, list):
-#             from .rsfc import calc_ALFF
-#             power, ALFF, fALFF = calc_ALFF(residual, dt, band=alff)
-#             alff_matrix[xi, yi, zi] = ALFF
-#             falff_matrix[xi, yi, zi] = fALFF
-#             fft_matrix[xi, yi, zi, :] = power
-#     print('Nuisance regression process is done..')
-#
-#     if alff and isinstance(alff, list):
-#         alff_matrix[alff_matrix != 0] -= alff_matrix[alff_matrix != 0].mean()
-#         alff_matrix[alff_matrix != 0] /= alff_matrix[alff_matrix != 0].std()
-#         falff_matrix[falff_matrix != 0] -= falff_matrix[falff_matrix != 0].mean()
-#         falff_matrix[falff_matrix != 0] /= falff_matrix[falff_matrix != 0].std()
-#         return residual_matrix, f, fft_matrix, alff_matrix, falff_matrix
-#     else:
-#         return residual_matrix

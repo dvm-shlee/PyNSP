@@ -1,3 +1,4 @@
+from __future__ import division
 from .base import ImageBase, TimeSeriesBase
 import numpy as np
 
@@ -79,7 +80,8 @@ class ImageHandler(ImageBase, HandlerBase):
         # map(np.ndarray.tolist, np.array_split(np.array(indices), 3, axis=0)) <- split indices into 3 parts
         if level is 'timeseries':
             output = np.zeros(self.img_shape)
-            print(len(self._indices_brain))
+            print("** {} is applying onto {} voxels..".format(function.__name__,
+                                                              len(self._indices_brain)))
             for i, j, k in self._indices_brain:
                 ts_data = img_data[i, j, k, :]
                 try:

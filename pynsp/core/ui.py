@@ -1,4 +1,3 @@
-from __future__ import division
 from .handler import ImageHandler, TimeSeriesHandler
 
 class RSFC(ImageHandler):
@@ -245,7 +244,7 @@ class RSFC(ImageHandler):
 
     @property
     def processed(self):
-        return self._processed.keys()
+        return sorted(self._processed.keys())
 
 
 class QC(ImageHandler, TimeSeriesHandler):
