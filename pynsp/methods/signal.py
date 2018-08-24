@@ -206,7 +206,6 @@ def nuisance_regression(data, estimator, ort=None, order=3):
         ort = pd.DataFrame(ort)
         design_matrix = pd.concat([polort, ort, ort.diff().fillna(0)],
                                   axis=1, ignore_index=True)
-
     design_matrix = standard_norm(design_matrix, axis=0)
 
     model = linear_regression(data, estimator, design_matrix)

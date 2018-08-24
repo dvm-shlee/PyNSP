@@ -350,7 +350,7 @@ class QC(ImageHandler, TimeSeriesHandler):
 
     def calc_FD(self):
         from ..methods.qc import calc_displacements
-        self['FD'] = self._apply_func2ts(calc_displacements)
+        self['FD'] = self._apply_func2ts(calc_displacements, level='dataframe')
 
     def calc_DVARS(self):
         from ..methods.signal import demean
