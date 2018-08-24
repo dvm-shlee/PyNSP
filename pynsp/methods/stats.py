@@ -65,6 +65,7 @@ def map_connectivity_with_roi(img_data, roi_indices, brain_indices=None,
                                               iters=use_Bootstrap[1])
     else:
         roi_tss = extract_ts_from_coordinates(img_array, roi_indices)
+    roi_tss = np.nan_to_num(roi_tss)
 
     if use_PCA is not None:
         from sklearn.decomposition import PCA
