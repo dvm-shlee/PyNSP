@@ -81,8 +81,11 @@ class ImageHandler(ImageBase, HandlerBase):
             output = np.zeros(self.img_shape)
             for i, j, k in self._indices_brain:
                 ts_data = img_data[i, j, k, :]
-                output[i, j, k, :] = function(ts_data, *args, **kwargs)
-            return output
+                try:
+                    output[i, j, k, :] = function(ts_data, *args, **kwargs)
+                except:
+                    output[i, j, k, :] = np.zeros(ts_data.shape)
+                return output
 
         elif level is 'image':
             return function(img_data, *args, **kwargs)

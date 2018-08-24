@@ -1,5 +1,5 @@
+from __future__ import division
 from .handler import ImageHandler, TimeSeriesHandler
-
 
 class RSFC(ImageHandler):
     """
