@@ -191,9 +191,10 @@ class RSFC(ImageHandler):
 
         atlas = load(atlas_path).get_data()
         list_rois = map(int, list(set(atlas.flatten()))[1:])
+        print(atlas_label)
         print(list_rois)
         for roi in list_rois:
-            print("Calculating brain-wise connectivity for {}..".format(atlas_label[roi]))
+            print("Calculating brain-wise connectivity for {}..".format(atlas_label[roi]))
             start_time = time.time()
             n_processed = len(self._processed.keys())
             step1 = '{}.{}_Corr'.format(str(n_processed).zfill(3), atlas_label[roi])
