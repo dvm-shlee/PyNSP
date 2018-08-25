@@ -58,9 +58,8 @@ def main():
     rcon.add_argument("-l", "--label", help="atlas label file", type=str, required=False)
     rcon.add_argument("-m", "--mask", help="brain mask file", type=str, required=False)
     rcon.add_argument("-o", "--output", help="output file prefix", type=str, required=True)
-    rcon.add_argument("--PCA", help="use PCA", dest='pca', action='store_true')
-    rcon.add_argument("--FDR", help="FDR correction", dest='fdr', action='store_true')
-    rcon.set_defaults(pca=False, fdr=False)
+    rcon.add_argument("--pca", help="use PCA", dest='pca', action='store_true', default=False)
+    rcon.add_argument("--fdr", help="FDR correction", dest='fdr', action='store_true', default=False)
     rcon.add_argument("--Bootstrap", help="use Boorstrap [number of voxel, iteration]",
                       type=int, nargs=2, default=None)
 
