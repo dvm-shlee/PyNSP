@@ -128,8 +128,10 @@ def main():
 
         obj = nsp.RSFC(args.input, mask_path=args.mask)
         if args.FDR is True:
+            print('FDR correction set to True')
             fwe = "Benjamini-Hochberg"
         else:
+            print('FDR correction set to False')
             fwe = None
         obj.calc_ROI_CC(args.atlas, atlas_label, use_PCA=args.PCA,
                         use_Bootstrap=args.Bootstrap, fwe=fwe)

@@ -60,19 +60,24 @@ def map_connectivity_with_roi(img_data, roi_indices, brain_indices=None,
 
     from .tools import extract_ts_from_coordinates
     if use_Bootstrap is not None:
+        print('Using Bootstrap for re-sampling, {} voxels with {} times'.format(use_Bootstrap[0],
+                                                                                use_Bootstrap[1]))
         roi_tss = extract_ts_from_coordinates(img_array, roi_indices,
                                               n_voxels=use_Bootstrap[0],
                                               iters=use_Bootstrap[1])
     else:
+
         roi_tss = extract_ts_from_coordinates(img_array, roi_indices)
     roi_tss = np.nan_to_num(roi_tss)
 
     if use_PCA is not None:
+        print('Using PCA to use first principal component as signal.')
         from sklearn.decomposition import PCA
         pca = PCA(n_components=use_PCA)
         pca.fit(roi_tss)
         roi_signal = pca.components_[0, :]
     else:
+        print('Using mean signal from voxels as signal.')
         roi_signal = roi_tss.mean(0)
 
     corr_map = np.zeros(img_array.shape[:3])
