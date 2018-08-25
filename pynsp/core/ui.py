@@ -173,7 +173,7 @@ class RSFC(ImageHandler):
                                 NN=NN, key=key, level='image')
         print("Done...({} sec)".format(np.round(time.time() - start_time, decimals=3)))
 
-    def calc_ROI_CC(self, atlas_path, atlas_label, use_PCA=True,
+    def calc_ROI_CC(self, atlas_path, atlas_label, use_PCA=None, use_Bootstrap=None,
                     fwe="Benjamini-Hochberg", key=None):
         """
 
@@ -202,7 +202,8 @@ class RSFC(ImageHandler):
 
             r, p = self.apply(map_connectivity_with_roi,
                               roi_indices, self._indices_brain,
-                              use_PCA=use_PCA, key=key, level='image')
+                              use_PCA=use_PCA, use_Bootstrap=use_Bootstrap,
+                              key=key, level='image')
 
             print("Done...({} sec)".format(np.round(time.time() - start_time, decimals=3)))
             self[step1] = r
