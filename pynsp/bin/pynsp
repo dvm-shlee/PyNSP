@@ -127,13 +127,13 @@ def main():
             atlas_label = ["idx-{}".format(str(int(i)).zfill(3)) for i in sorted(list(set(atlas.flatten())))]
 
         obj = nsp.RSFC(args.input, mask_path=args.mask)
-        if args.FDR is True:
+        if args.fdr is True:
             print('FDR correction set to True')
             fwe = "Benjamini-Hochberg"
         else:
             print('FDR correction set to False')
             fwe = None
-        obj.calc_ROI_CC(args.atlas, atlas_label, use_PCA=args.PCA,
+        obj.calc_ROI_CC(args.atlas, atlas_label, use_PCA=args.pca,
                         use_Bootstrap=args.Bootstrap, fwe=fwe)
         for step in obj.processed:
             surfix = step.split('.')[-1]
