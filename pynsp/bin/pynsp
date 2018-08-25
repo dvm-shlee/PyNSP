@@ -133,7 +133,11 @@ def main():
         else:
             print('FDR correction set to False')
             fwe = None
-        obj.calc_ROI_CC(args.atlas, atlas_label, use_PCA=args.pca,
+        if args.pca is True:
+            pca = 10
+        else:
+            pca = None
+        obj.calc_ROI_CC(args.atlas, atlas_label, use_PCA=pca,
                         use_Bootstrap=args.Bootstrap, fwe=fwe)
         for step in obj.processed:
             surfix = step.split('.')[-1]
