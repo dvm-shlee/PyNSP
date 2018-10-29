@@ -1,6 +1,6 @@
 from .io import load, save
 import numpy as np
-
+import os
 
 class ImageBase(object):
     """
@@ -53,3 +53,25 @@ class TimeSeriesBase(object):
 
     def save_as(self, filename):
         save(self, filename)
+
+
+class MatlabEngBase(object):
+    """
+    This is Base class for Matlab Engine
+    """
+
+    def __init__(self, *args):
+        # Initiate engine
+        try:
+            import matlab.engine
+        except:
+            raise Exception #TODO: Error message to show no matlab engine
+
+        from pynsp import package_directory
+        self.path = os.path.join(package_directory, *args)
+        self.eng = matlab.engine.start_matlab()
+        self.eng.addpath(self.eng.genpath(self.path))
+
+    @property
+    def help(self):
+        return self.eng.help

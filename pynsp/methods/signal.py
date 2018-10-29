@@ -199,7 +199,9 @@ def nuisance_regression(data, estimator, ort=None, order=3):
     :param data:
     :param estimator:
     :param ort:
+    :param noise_pca: Use PCA as regressor if image data is provided
     :param order:
+    :type noise_pca: tuple(image_data, pval)
     :return:
     """
     from .stats import linear_regression
@@ -225,3 +227,23 @@ def nuisance_regression(data, estimator, ort=None, order=3):
         regressor = model.predict(design_matrix)
         regressor -= regressor.mean()
         return np.asarray(data - regressor)
+
+
+def get_pca_noise(image_data, pval):
+    import numpy as np
+    import scipy.stats as st
+    from sklearn.decomposition import PCA
+
+    # Norm STD map
+    std_map = image_data.std(-1)
+    std_map -= std_map.mean()
+    std_map /= std_map.std()
+
+    # Create the mask that shows significant noise
+    std_mask = np.zeros(std_map.shape)
+    std_mask[std_map >= st.norm.ppf(1 - pval)] = 1
+
+    pca = PCA(n_components=5)
+    pca.fit(image_data[np.nonzero(std_mask)])
+
+    return pca.components_[0]

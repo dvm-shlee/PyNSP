@@ -22,6 +22,8 @@ def main():
     reho = subparsers.add_parser("reho", help="Regional Homogeneity")
     alff = subparsers.add_parser("alff", help="Amplitude of Low Frequency Fluctuation")
     rcon = subparsers.add_parser("roi-conn", help="ROI-based Connectivity")
+    wvlt = subparsers.add_parser("wavelet", help="WaveletDespiking")
+    mnrm = subparsers.add_parser("modenorm", help="Mode Normalization")
 
     # 1. Quality control
     qc.add_argument("-i", "--input", help="input file", type=str, required=True)
@@ -63,6 +65,16 @@ def main():
     rcon.add_argument("--Bootstrap", help="use Boorstrap [number of voxel, iteration]",
                       type=int, nargs=2, default=None)
 
+    # 6. Wavelet despiking
+    wvlt.add_argument("-i", "--input", help="input file", type=str, required=True)
+    wvlt.add_argument("-o", "--output", help="output file prefix", type=str, required=True)
+    wvlt.add_argument("-t", "--thr", help="Threshold", type=int, required=True)
+    wvlt.add_argument("-w", "--wavelet", help="Wavelet to use for wavelet transform", type=str, required=False)
+
+    # 7. Mode normalization
+    mnrm.add_argument("-i", "--input", help="input file", type=str, required=True)
+    mnrm.add_argument("-o", "--output", help="output file prefix", type=str, required=True)
+    mnrm.add_argument("-m", "--mode", help="Mode (default:1000)", type=int, required=False, default=1000)
 
     args = parser.parse_args()
     if args.function == 'qc':
@@ -142,6 +154,37 @@ def main():
         for step in obj.processed:
             surfix = step.split('.')[-1]
             obj.save_as("{}_{}".format(args.output, surfix), step)
+
+    elif args.function == 'wavelet':
+        print('Wavelet despiking module is selected.\n')
+        print('-='*30 + '\nPlease reference one of below papers if you use this tool.\n' + '-='*30)
+        print('\n1. Patel AX, et al. (2014) A wavelet method for modeling and despiking motion '
+              'artifacts from resting-state fMRI time series. NeuroImage. 95:287-304.'
+              '(http://dx.doi.org/10.1016/j.neuroimage.2014.03.012).')
+        print('\n2. Patel AX and Bullmore ET (2016) A wavelet-based estimator of the degrees of '
+              'freedom in denoised fMRI time series for probabilistic testing of functional connectivity '
+              'and brain graphs. NeuroImage. 142: 14-26.'
+              '(http://dx.doi.org/10.1016/j.neuroimage.2015.04.052).')
+        print('\n[Input arguments]')
+        print('- Input: {}'.format(args.input))
+        print('- Output prefix: {}'.format(args.output))
+        print('- Threshold: {}'.format(args.thr))
+        print('- WaveletFunction: {}'.format(args.wavelet))
+        from pynsp.core.base import MatlabEngBase
+        print('Initiating MATLAB engine...')
+        obj = MatlabEngBase('matlab', 'BrainWavelet')
+        args_input = [args.input, args.output, 'threshold', args.thr]
+        if args.wavelet is not None:
+            args_input.extend(['wavelet', args.wavelet])
+        print('Run WaveletDespiking...')
+        obj.eng.WaveletDespike(*args_input, nargout=0)
+        print('Done..')
+        obj.eng.quit()
+
+    elif args.function == 'modenorm':
+        obj = nsp.RSFC(args.input, mask_path=args.mask)
+        obj.mode_norm(mode=args.mode)
+        obj.save_as(args.output, obj.processed[0])
 
 
 if __name__ == '__main__':

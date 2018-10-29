@@ -10,19 +10,6 @@ def load(filename):
     if '.nii' in filename:
         from nibabel import Nifti1Image
         img = Nifti1Image.load(filename)
-    # elif '.mha' in filename: #TODO: itk format compatibility
-    #     try:
-    #         import SimpleITK as sitk
-    #         mha = sitk.ReadImage(filename)
-    #     except:
-    #         raise Exception
-    #
-    #     from nibabel import Nifti1Image, affines
-    #     data = sitk.GetArrayFromImage(mha)
-    #     resol = mha.GetSpacing()
-    #     origin = mha.GetOrigin()
-    #     affine = affines.from_matvec(np.diag(resol), origin)
-    #     img = Nifti1Image(data, affine)
     else:
         import pandas as pd
         if '.xls' in filename:
@@ -74,4 +61,4 @@ def save(data_obj, filename, key=None):
             output_path = '{}{}'.format(filename, '.xlsx')
         data.to_excel(output_path, index=False)
     else:
-        raise Exception  # TODO: Exception message handler
+        raise Exception  #TODO: Exception message handler

@@ -23,7 +23,6 @@ class ImageHandler(ImageBase, HandlerBase):
 
     def __init__(self, img_path):
         super(ImageHandler, self).__init__(img_path)
-        # self.set_brainmask(mask_path)
 
     @property
     def apply(self):
@@ -63,7 +62,6 @@ class ImageHandler(ImageBase, HandlerBase):
         :param kwargs: optional key:value arguments
         :return:
         """
-
         key, level = None, 'timeseries'
         for k, item in kwargs.items():
             if k is 'key':
@@ -72,7 +70,6 @@ class ImageHandler(ImageBase, HandlerBase):
             if k is 'level':
                 level = item
                 del (kwargs[k])
-
         if key is None:
             img_data = self.img_data
         else:
@@ -88,12 +85,12 @@ class ImageHandler(ImageBase, HandlerBase):
                     output[i, j, k, :] = function(ts_data, *args, **kwargs)
                 except:
                     output[i, j, k, :] = np.zeros(ts_data.shape)
-            return output
-
         elif level is 'image':
-            return function(img_data, *args, **kwargs)
+            output = function(img_data, *args, **kwargs)
         else:
             raise Exception         #TODO: Exception message handler
+
+        return np.nan_to_num(output)
 
 
 class TimeSeriesHandler(TimeSeriesBase, HandlerBase):
@@ -162,11 +159,3 @@ class TimeSeriesHandler(TimeSeriesBase, HandlerBase):
     def __iter__(self):
         for col in self.df.columns:
             yield self.df[col]
-
-
-class GroupDataHandler(object):
-    """
-    This class is designed to perform group statistics
-    """
-    def __init__(self):
-        pass

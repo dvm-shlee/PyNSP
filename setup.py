@@ -3,7 +3,9 @@
 PyNSP (Python Neural-Signal Processing)
 """
 from distutils.core import setup
+# from distutils.extension import Extension
 from setuptools import find_packages
+# from Cython.Distutils import build_ext
 import re, io
 
 __version__ = re.search(
@@ -13,6 +15,9 @@ __version__ = re.search(
 
 __author__ = 'SungHo Lee'
 __email__ = 'shlee@unc.edu'
+
+# cmdclass = {'build_ext': build_ext}
+# ext_modules = [Extension("pynsp.cython.sampen", [ "pynsp/cython/sampen.pyx" ])]
 
 setup(name='PyNSP',
       version=__version__,
@@ -44,5 +49,6 @@ setup(name='PyNSP',
             'Programming Language :: Python :: 2.7',
       ],
       keywords = 'Python Neural-Signal Processing'
+
      )
 

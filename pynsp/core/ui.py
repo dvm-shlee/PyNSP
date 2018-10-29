@@ -1,5 +1,6 @@
 from .handler import ImageHandler, TimeSeriesHandler
 
+
 class RSFC(ImageHandler):
     """
     Processor object to calculate Resting State Functional Connectivity(RSFC) parameters.
@@ -66,6 +67,39 @@ class RSFC(ImageHandler):
                                           level='columns'))
         return pd.concat(ort_handler, axis=1, ignore_index=True)
 
+    def mode_norm(self, **kwargs):
+        """
+        Mode normalization tool
+        :param mode:
+        :param kwargs:
+        :return:
+        """
+        from ..methods.signal import mode_norm
+        import time
+        import numpy as np
+
+        # Default parameters
+        mode = 1000
+        decimals = 3
+        key = None
+
+        for k, item in kwargs.items():
+            if k is 'mode':
+                mode = item
+            if k is 'decimals':
+                decimals = item
+            if k is 'key':
+                key = item
+
+        print('Mode {} normalization...'.format(mode))
+        start_time = time.time()
+        n_processed = len(self._processed.keys())
+        step = '{}.ModeNorm'.format(str(n_processed).zfill(3))
+        self[step] = self.apply(mode_norm, self._indices_brain,
+                                mode=mode,
+                                decimals=decimals, level='image', key=key)
+        print("Done...({} sec)".format(np.round(time.time() - start_time, decimals=3)))
+
     def _denoising(self, orts, **kwargs):
         """
         Core function for applying regression based denoising
@@ -74,36 +108,28 @@ class RSFC(ImageHandler):
         :return:
         """
         from sklearn.linear_model import BayesianRidge
-        from ..methods.signal import mode_norm
+
         from ..methods.signal import nuisance_regression
         import time
         import numpy as np
 
-        mode, decimals, order = 1000, 3, self._order
+        # Default parameters
+        key = None
+        order = self._order
 
         for k, item in kwargs.items():
-            if k is 'mode':
-                mode = item
-            if k is 'decimals':
-                decimals = item
+            if k is 'key':
+                key = item
             if k is 'order':
                 order = item
-        print('Mode {} normalization...'.format(mode))
-        start_time = time.time()
-        n_processed = len(self._processed.keys())
-        step1 = '{}.ModeNorm'.format(str(n_processed).zfill(3))
-        self[step1] = self.apply(mode_norm, self._indices_brain,
-                                 mode=mode,
-                                 decimals=decimals, level='image')
-        print("Done...({} sec)".format(np.round(time.time() - start_time, decimals=3)))
+
         print('Nuisance_regression...')
         start_time = time.time()
         n_processed = len(self._processed.keys())
-        step2 = '{}.Regressed'.format(str(n_processed).zfill(3))
-        self[step2] = self.apply(nuisance_regression,
-                                 BayesianRidge,
-                                 key=step1,
-                                 ort=orts, order=order, level='timeseries')
+        step = '{}.Regressed'.format(str(n_processed).zfill(3))
+        self[step] = self.apply(nuisance_regression,
+                                BayesianRidge,
+                                ort=orts, order=order, level='timeseries', key=key)
         print("Done...({} sec)".format(np.round(time.time() - start_time, decimals=3)))
 
     def bandpass_filtering(self, **kwargs):
@@ -115,8 +141,12 @@ class RSFC(ImageHandler):
         from ..methods.signal import freqency_filter
         import time
         import numpy as np
-        dt, band = self._dt, self._band
-        key, order = None, 5
+
+        # Default parameters
+        dt = self._dt
+        band = self._band
+        key = None
+        order = 5
         btype = 'band'
 
         for k, item in kwargs.items():
@@ -157,14 +187,16 @@ class RSFC(ImageHandler):
         import time
         import numpy as np
         from ..methods.rsfc import map_ReHo
-        key, NN = None, 3
+
+        # Default parameters
+        key = None
+        NN = 3
 
         for k, item in kwargs.items():
             if k is 'key':
                 key = item
             if k in 'NN':
                 NN = item
-
         n_processed = len(self._processed.keys())
         step = '{}.ReHo'.format(str(n_processed).zfill(3))
         print("Calculating ReHo..")
@@ -218,7 +250,6 @@ class RSFC(ImageHandler):
         from ..methods.rsfc import map_ALFF
         import numpy as np
         import time
-
         dt, band, key = self._dt, self._band, None
         for k, item in kwargs.items():
             if k is 'dt':
@@ -227,14 +258,12 @@ class RSFC(ImageHandler):
                 band = item
             if k is 'key':
                 key = item
-
         print("Calculating resting-state parameters..")
         start_time = time.time()
         n_processed = len(self._processed.keys())
         step1 = '{}.Pspec'.format(str(n_processed).zfill(3))
         step2 = '{}.ALFF'.format(str(n_processed+1).zfill(3))
         step3 = '{}.fALFF'.format(str(n_processed+2).zfill(3))
-
         f, Pspec, ALFF, fALFF = self.apply(map_ALFF, self._indices_brain,
                                            dt, band, key=key, level='image')
         print("Done...({} sec)".format(np.round(time.time() - start_time, decimals=3)))
@@ -258,9 +287,8 @@ class QC(ImageHandler, TimeSeriesHandler):
         TimeSeriesHandler.__init__(self, mparam_path)
         self._processed = dict()
         self.set_brainmask(mask_path=mask_path)
-
         self.set_columns(['Roll', 'Pitch', 'Yaw', 'dI-S', 'dR-L', 'dA-P'])
-        self._prep_img(**kwargs)
+        # self._prep_img(**kwargs)
         self._prep_volreg(**kwargs)
         if calc_all is True:
             self.calc_ALL()
@@ -303,7 +331,8 @@ class QC(ImageHandler, TimeSeriesHandler):
 
     def _prep_img(self, **kwargs):
 
-        mode, decimals = None, None
+        mode = None
+        decimals = None
 
         for k, item in kwargs.items():
             if k is 'mode':
@@ -320,7 +349,9 @@ class QC(ImageHandler, TimeSeriesHandler):
 
     def _prep_volreg(self, **kwargs):
 
-        mean_radius, order = None, 3
+        mean_radius = None
+        order = 3
+
         for k, item in kwargs.items():
             if k is 'mean_radius':
                 mean_radius = item
@@ -373,12 +404,10 @@ class QC(ImageHandler, TimeSeriesHandler):
                                       indices=self.mask,
                                       level='image')
 
-
     def plot(self, *args, **kwargs):
         import pandas as pd
         qc_all = [v for k, v in self._processed.items() if isinstance(v, pd.DataFrame)]
         pd.concat(qc_all, axis=1).plot(*args, **kwargs)
-
 
     def __repr__(self):
         output = ['********************',
