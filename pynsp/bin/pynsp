@@ -35,7 +35,8 @@ def main():
     nuis.add_argument("-i", "--input", help="input file", type=str, required=True)
     nuis.add_argument("-p", "--param", help="nuisance parameter files", nargs='*', type=str, required=False)
     nuis.add_argument("-t", "--dt", help="sampling rate", type=float, required=False)
-    nuis.add_argument("-b", "--band", help="band pass filter range (Hz)", nargs=2, type=float, required=False)
+    nuis.add_argument("-b", "--band", help="band pass filter range (Hz)", nargs=2, type=float, required=Flase)
+    nuis.add_argument("-h", "--high", help="high pass filter range (Hz)", type=float, required=False)
     nuis.add_argument("-m", "--mask", help="brain mask file", type=str, required=False)
     nuis.add_argument("-o", "--output", help="output file prefix", type=str, required=True)
     nuis.add_argument("--polort", help="polynomial regressor", type=int, default=3)
@@ -96,10 +97,9 @@ def main():
                        order=args.polort, band=args.band, dt=args.dt)
         obj.nuisance_denoising()
         if args.band is not None:
-            if isinstance(args.band, list):
-                obj.bandpass_filtering()
-            elif isinstance(args.band, float):
-                obj.bandpass_filtering(btype='highpass', band=args.band)
+            obj.bandpass_filtering()
+        if args.high is not None:
+            obj.bandpass_filtering(btype='highpass', band=args.high)
         obj.save_as(args.output, obj.processed[-1])
 
     elif args.function == 'reho':
