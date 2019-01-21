@@ -128,7 +128,7 @@ def als_detrend(data, lamda, p, niter=10):
     return np.asarray(output)
 
 
-def freqency_filter(data, bandcut, dt, order=5, btype='band'):
+def freqency_filter(data, bandcut, dt, order=5, btype='bandpass'):
     """
     Temporal frequency filter
 
@@ -137,7 +137,7 @@ def freqency_filter(data, bandcut, dt, order=5, btype='band'):
     :param dt:      repeated time
     :param order:   order of the filter
     :param btype:   ({'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional)
-                    The type of filter. Default is 'lowpass'.
+                    The type of filter. Default is 'bandpass'.
     :return:        filtered data
     """
     import numpy as np

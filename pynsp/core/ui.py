@@ -147,7 +147,7 @@ class RSFC(ImageHandler):
         band = self._band
         key = None
         order = 5
-        btype = 'band'
+        btype = 'bandpass'
 
         for k, item in kwargs.items():
             if k is 'dt':

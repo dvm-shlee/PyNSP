@@ -96,7 +96,10 @@ def main():
                        order=args.polort, band=args.band, dt=args.dt)
         obj.nuisance_denoising()
         if args.band is not None:
-            obj.bandpass_filtering()
+            if isinstance(args.band, list):
+                obj.bandpass_filtering()
+            elif isinstance(args.band, float):
+                obj.bandpass_filtering(btype='highpass', band=args.band)
         obj.save_as(args.output, obj.processed[-1])
 
     elif args.function == 'reho':
