@@ -48,24 +48,22 @@ def avail_cpu():
 
 def extract_ts_from_coordinates(img_data, indices, n_voxels='Max',
                                 iters=None, replace=False):
-    """
-    Extract time-series data from ROI defined on Atlas.
+    """ extract time-series data from ROI defined on Atlas.
     if size are provided, data will be collected from
     the randomly sampled voxels with given size.
 
-    :param img_data: 3D+time data matrix
-    :param indices: All coordinates inside the roi
-    :param n_voxels: number of voxels that want to sample (default = 'Max')
-    :param iters: number of iteration to perform random voxel sampling
-    :param replace: Whether the sample is with or without replacement
-    :type img_data:
-    :type indices: 2D list
-    :type n_voxels: int or 'Max'
-    :type iters: int
-    :type replace: boolean
-    :return: 2 dimentional time-series data (averaged time-series data,
-                                             number of iteration)
-    :rtype return: numpy.ndarray
+    Args:
+        img_data(array):            3D+time data matrix
+        indices(list):              set of coordinates of the roi
+        n_voxels(int, or 'Max'):    number of voxels that want to extract from roi
+                                    (default = 'Max')
+        iters(int):                 number of iteration to perform random voxel sampling
+        replace(bool):              whether the sample is with or without replacement
+                                    (optional for method numpy.random.choice)
+
+    Returns:
+        ts_data:    2 dimentional time-series data
+                    (averaged time-series data, number of iteration)
     """
     # The below code allows to use single coordinate index instead of set of indices
     indices = np.asarray(indices)
@@ -91,12 +89,13 @@ def extract_ts_from_coordinates(img_data, indices, n_voxels='Max',
         result = img_data[indx, indy, indz, :]
     return result
 
-def save_atlas_label(label, filename):
-    """ Save label instance to file
 
-    :param label:
-    :param filename:
-    :return:
+def save_atlas_label(label, filename):
+    """Save label instance to file
+
+    Args:
+        label(obj):     label instance
+        filename(str):  filename
     """
     with open(filename, 'w') as f:
         line = list()
@@ -112,7 +111,7 @@ def save_atlas_label(label, filename):
         f.write(line)
 
 
-def splitnifti(path):
+def split_nifti(path):
     import os
     while '.nii' in path:
         path = os.path.splitext(path)[0]
@@ -142,12 +141,12 @@ def combine_atlas(path):
             atlasdata = np.asarray(imageobj.dataobj)
         else:
             atlasdata += np.asarray(imageobj.dataobj) * (idx + 1)
-        label[idx + 1] = splitnifti(img), rgbs[idx]
+        label[idx + 1] = split_nifti(img), rgbs[idx]
     atlas = ImageObj(atlasdata, affine[0])
     return atlas, label
 
 
-def parsing_atlas(path):
+def parse_atlas(path):
     """Parsing atlas imageobj and label
 
     :param path:
@@ -157,14 +156,14 @@ def parsing_atlas(path):
     import nibabel as nib
     atlas = nib.load(path)
 
-    filename = os.path.basename(splitnifti(path))
+    filename = os.path.basename(split_nifti(path))
     dirname = os.path.dirname(path)
 
     label_cand = [f for f in os.listdir(dirname) if filename in f]
     if label_cand is None:
         raise Exception
     else:
-        label_path = [f for f in label_cand
+        label_path = [os.path.join(dirname, f) for f in label_cand
                       if os.path.splitext(f)[-1] in ['.lbl', '.label', '.txt']][0]
         if label_path is None:
             raise Exception

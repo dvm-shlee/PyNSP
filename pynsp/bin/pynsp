@@ -79,8 +79,10 @@ def main():
 
     args = parser.parse_args()
     if args.function == 'qc':
+
         import nibabel as nib
         import numpy as np
+
         obj = nsp.QC(args.input, mparam_path=args.param, mask_path=args.mask, calc_all=True)
         obj.mparam.to_excel("{}_mparam.xlsx".format(args.output))
         obj.FD.to_excel("{}_FD.xlsx".format(args.output))
@@ -90,7 +92,7 @@ def main():
         std.to_filename("{}_STD.nii.gz".format(args.output))
         snr = nib.Nifti1Image(obj.tSNR, affine)
         snr.to_filename("{}_tSNR.nii.gz".format(args.output))
-        np.savetxt("{}_VWI.txt.gz".format(args.output), obj.VWI)
+        np.savetxt("{}_VWI.txt".format(args.output), obj.VWI)
 
     elif args.function == 'nuisance':
         obj = nsp.RSFC(args.input, ort_paths=args.param, mask_path=args.mask,
@@ -112,12 +114,12 @@ def main():
         obj.calc_ALFF()
         for step in obj.processed:
             if '_freq' in step:
-                surfix = step.split('.')[-1]
-                with open("{}_{}.txt".format(args.output, surfix), 'w') as f:
+                suffix = step.split('.')[-1]
+                with open("{}_{}.txt".format(args.output, suffix), 'w') as f:
                     f.write(", ".join(obj[step].astype(str).tolist()))
             else:
-                surfix = step.split('.')[-1]
-                obj.save_as("{}_{}".format(args.output, surfix), step)
+                suffix = step.split('.')[-1]
+                obj.save_as("{}_{}".format(args.output, suffix), step)
 
     elif args.function == 'roi-conn':
         from pynsp.methods.tools import parse_label
@@ -142,46 +144,59 @@ def main():
             atlas_label = ["idx-{}".format(str(int(i)).zfill(3)) for i in sorted(list(set(atlas.flatten())))]
 
         obj = nsp.RSFC(args.input, mask_path=args.mask)
+
         if args.fdr is True:
             print('FDR correction set to True')
-            fwe = "Benjamini-Hochberg"
+            multi_comp = "Benjamini-Hochberg"
         else:
             print('FDR correction set to False')
-            fwe = None
+            multi_comp = None
         if args.pca is True:
             pca = 10
         else:
             pca = None
         obj.calc_ROI_CC(args.atlas, atlas_label, use_PCA=pca,
-                        use_Bootstrap=args.Bootstrap, fwe=fwe)
+                        use_Bootstrap=args.Bootstrap, multi_comp=multi_comp)
         for step in obj.processed:
-            surfix = step.split('.')[-1]
-            obj.save_as("{}_{}".format(args.output, surfix), step)
+            suffix = step.split('.')[-1]
+            obj.save_as("{}_{}".format(args.output, suffix), step)
 
     elif args.function == 'wavelet':
+
         print('Wavelet despiking module is selected.\n')
         print('-='*30 + '\nPlease reference one of below papers if you use this tool.\n' + '-='*30)
+
         print('\n1. Patel AX, et al. (2014) A wavelet method for modeling and despiking motion '
               'artifacts from resting-state fMRI time series. NeuroImage. 95:287-304.'
               '(http://dx.doi.org/10.1016/j.neuroimage.2014.03.012).')
+
         print('\n2. Patel AX and Bullmore ET (2016) A wavelet-based estimator of the degrees of '
               'freedom in denoised fMRI time series for probabilistic testing of functional connectivity '
               'and brain graphs. NeuroImage. 142: 14-26.'
               '(http://dx.doi.org/10.1016/j.neuroimage.2015.04.052).')
+
         print('\n[Input arguments]')
         print('- Input: {}'.format(args.input))
         print('- Output prefix: {}'.format(args.output))
         print('- Threshold: {}'.format(args.thr))
         print('- WaveletFunction: {}'.format(args.wavelet))
+
         from pynsp.core.base import MatlabEngBase
+
         print('Initiating MATLAB engine...')
+
         obj = MatlabEngBase('matlab', 'BrainWavelet')
         args_input = [args.input, args.output, 'threshold', args.thr]
+
         if args.wavelet is not None:
             args_input.extend(['wavelet', args.wavelet])
+
         print('Run WaveletDespiking...')
+
         obj.eng.WaveletDespike(*args_input, nargout=0)
+
         print('Done..')
+
         obj.eng.quit()
 
     elif args.function == 'modenorm':

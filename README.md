@@ -1,2 +1,2 @@
-# PyNSP (Python Neuro-imaging Signal Process tool)
-### Version: 0.2.1
+# PyNSP (Python Neuronal Signal Processing Tools)
+### Version: 0.2.2

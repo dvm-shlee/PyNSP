@@ -86,43 +86,52 @@ def demean(data, decimals=None):
     return dm_data
 
 
-def als_fit(data, lamda, p, niter):
+def als_fit(data, l, p, niter):
     """
     Asymmetric Least Squares Smoothing for Baseline or Envelope fitting
 
     :param data: time series data
-    :param lamda: smoothness
+    :param l: smoothness, lambda
     :param p: assymetry parameter
     :param niter: number of iteration
     :return: fitted data
     """
     import numpy as np
+    from scipy.sparse import linalg
     from scipy import sparse
+    import sys
 
     L = len(data)
     D = sparse.csc_matrix(np.diff(np.eye(L), 2))
     w = np.ones(L)
-    for i in xrange(niter):
-        W = sparse.spdiags(w, 0, L, L)
-        Z = W + lamda * D.dot(D.transpose())
-        z = sparse.linalg.spsolve(Z, w * data)
-        w = p * (data > z) + (1 - p) * (data < z)
+    if sys.version_info[0] == 3:
+        for i in range(niter):
+            W = sparse.spdiags(w, 0, L, L)
+            Z = W + l * D.dot(D.transpose())
+            z = linalg.spsolve(Z, w * data)
+            w = p * (data > z) + (1 - p) * (data < z)
+    else:
+        for i in xrange(niter):
+            W = sparse.spdiags(w, 0, L, L)
+            Z = W + l * D.dot(D.transpose())
+            z = linalg.spsolve(Z, w * data)
+            w = p * (data > z) + (1 - p) * (data < z)
     return np.asarray(z)
 
 
-def als_detrend(data, lamda, p, niter=10):
+def als_detrend(data, l, p, niter=10):
     """
     Apply ALS fitting
 
     :param data: time series data
-    :param lamda: smoothness
+    :param l: smoothness, lambda
     :param p: assymetry parameter
     :param niter: number of iteration
     :return: corrected data
     """
     import numpy as np
 
-    z = als_fit(data, lamda, p, niter)
+    z = als_fit(data, l, p, niter)
     z = z - z[0]
     output = data - z
     return np.asarray(output)
@@ -178,11 +187,11 @@ def window_smoothing(data, window_len=11, window='hanning'):
     import numpy as np
 
     if data.size < window_len:
-        raise ValueError, "Input vector needs to be bigger than window size."
+        raise ValueError("Input vector needs to be bigger than window size.")
     if window_len < 3:
         return data
     if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
-        raise ValueError, "Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'"
+        raise ValueError("Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'")
     s = np.r_[data[window_len - 1:0:-1], data, data[-2:-window_len - 1:-1]]
 
     if window == 'flat':  # moving average

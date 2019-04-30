@@ -17,7 +17,7 @@ __author__ = 'SungHo Lee'
 __email__ = 'shlee@unc.edu'
 
 # cmdclass = {'build_ext': build_ext}
-# ext_modules = [Extension("pynsp.cython.sampen", [ "pynsp/cython/sampen.pyx" ])]
+# ext_modules = [Extension("pynsp.__cython.sampen", [ "pynsp/__cython/sampen.pyx" ])]
 
 setup(name='PyNSP',
       version=__version__,

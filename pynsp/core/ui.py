@@ -1,4 +1,5 @@
-from .handler import ImageHandler, TimeSeriesHandler
+from __future__ import print_function
+from .handler import ImageHandler, TimeSeriesHandler, GroupHandler
 
 
 class RSFC(ImageHandler):
@@ -206,15 +207,19 @@ class RSFC(ImageHandler):
         print("Done...({} sec)".format(np.round(time.time() - start_time, decimals=3)))
 
     def calc_ROI_CC(self, atlas_path, atlas_label, use_PCA=None, use_Bootstrap=None,
-                    fwe="Benjamini-Hochberg", key=None):
+                    multi_comp="Benjamini-Hochberg", key=None):
         """
 
-        :param atlas_path:
-        :param atlas_label:
-        :param use_PCA:
-        :param fwe:
-        :param key:
-        :return:
+        Args:
+            atlas_path:
+            atlas_label:
+            use_PCA:
+            use_Bootstrap:
+            multi_comp:
+            key:
+
+        Returns:
+
         """
         from ..methods.stats import map_connectivity_with_roi
         from .io import load
@@ -223,6 +228,7 @@ class RSFC(ImageHandler):
 
         atlas = load(atlas_path).get_data()
         list_rois = map(int, list(set(atlas.flatten()))[1:])
+
         for roi in list_rois:
             print("Calculating brain-wise connectivity for {}..".format(atlas_label[roi-1]))
             start_time = time.time()
@@ -239,14 +245,22 @@ class RSFC(ImageHandler):
 
             print("Done...({} sec)".format(np.round(time.time() - start_time, decimals=3)))
             self[step1] = r
-            if fwe is not None:
-                print("Correcting Family-Wise Error using {}.".format(fwe))
+            if multi_comp is not None:
+                print("Correcting multiple comparison problem with {}.".format(multi_comp))
                 from ..methods.stats import multicomp_pval_correction
-                self[step2] = multicomp_pval_correction(p, c_type=fwe)
+                self[step2] = multicomp_pval_correction(p, c_type=multi_comp)
             else:
                 self[step2] = p
 
     def calc_ALFF(self, **kwargs):
+        """
+
+        Args:
+            **kwargs:
+
+        Returns:
+
+        """
         from ..methods.rsfc import map_ALFF
         import numpy as np
         import time
@@ -290,6 +304,7 @@ class QC(ImageHandler, TimeSeriesHandler):
         self.set_columns(['Roll', 'Pitch', 'Yaw', 'dI-S', 'dR-L', 'dA-P'])
         # self._prep_img(**kwargs)
         self._prep_volreg(**kwargs)
+
         if calc_all is True:
             self.calc_ALL()
 
@@ -329,23 +344,22 @@ class QC(ImageHandler, TimeSeriesHandler):
     def tSNR(self):
         return self._processed['tSNR']
 
-    def _prep_img(self, **kwargs):
+    def modenorm(self, mode, decimals=3):
+        """ global intensity normalization using mode value
 
-        mode = None
-        decimals = None
+        Args:
+            mode:
+            decimals:
 
-        for k, item in kwargs.items():
-            if k is 'mode':
-                mode = item
-            if k is 'order':
-                decimals = item
-        if mode is not None:
-            from ..methods.signal import mode_norm
-            self._img_data = self.apply_img(mode_norm,
-                                            indices=self._indices_brain,
-                                            mode=mode,
-                                            decimals=decimals,
-                                            level='image')
+        Returns:
+
+        """
+        from ..methods.signal import mode_norm
+        self._img_data = self.apply_img(mode_norm,
+                                        indices=self._indices_brain,
+                                        mode=mode,
+                                        decimals=decimals,
+                                        level='image')
 
     def _prep_volreg(self, **kwargs):
 
@@ -433,3 +447,220 @@ class QC(ImageHandler, TimeSeriesHandler):
 
     def __setitem__(self, key, item):
         self._processed[key] = item
+
+
+class EvokedFMRI(GroupHandler):
+    """ ROI timcourse extraction from group level task based fMRI dataset
+    """
+    def __init__(self, pipe, package, step_code, filter_dict=None, mask_path=None, dt=None):
+        """
+
+        Args:
+            bucket(obj):        pynipt Bucket instance
+            package(str):       name of performed pipeline package
+            step_code(str):     pynipt pipeline stepcode to specify input dataset
+            filter_dict(dict):  filter dictionary for data parsing
+            mask_path(str):     path of brain mask image
+            dt(float):          sampling rate of fMRI data[TR], (default=None)
+                                if None, check the header information from the file
+            seaborn(bool): if True, extract timecourse into seaborn compatible dataframe
+        """
+        super(EvokedFMRI, self).__init__(pipe, package, step_code, filter_dict, mask_path, dt)
+
+        # Attributes for CBV calculation
+        self.splitted_ref = dict()
+        self.calc_cbv = False
+        self.cbv_dset = None
+        self.te = None
+
+    def set_CBV(self, step_code, filter_dict=None):
+        """
+
+        Args:
+            te(int):            Echo time parameter for CBV image (ms)
+            step_code(str):     pynipt pipeline stepcode of average image calculated from
+                                baseline time-points of  MION infusion scan
+            filter_dict(dict):  filter dictionary for data parsing
+        """
+        from pynipt import Bucket
+        step = [step for step in self.dset.params[1].steps if step_code in step][0]
+        if filter_dict is not None:
+            if 'ext' is not filter_dict.keys():
+                filter_dict['ext'] = 'nii.gz'
+        else:
+            filter_dict = dict(ext='nii.gz')
+        self.calc_cbv = True
+        bucket = Bucket(self.dset.path)
+        self.cbv_dset = bucket(1, pipelines=self._selected_package,
+                               steps=step, **filter_dict)
+
+    def _split_single_evoke(self, stim_onsets, time_baseline, time_poststim):
+        import numpy as np
+
+        stacked_data = self._stack_all()
+
+
+        bs_tr = int(time_baseline / self.dt)
+        ps_tr = int(time_poststim / self.dt)
+
+        x, y, z, n_file, t = stacked_data.shape
+        splitted_data = np.zeros([x, y, z, n_file * len(stim_onsets),
+                                  bs_tr + ps_tr])
+
+        if self._indices_brain is None:
+            self._indices_brain = np.nonzero(stacked_data.mean(-1).mean(-1))
+
+        for i, j, k in np.transpose(self._indices_brain):
+            for f in range(n_file):
+                voxel_data = stacked_data[i, j, k, f, :]
+                for p, onset in enumerate(stim_onsets):
+                    onset_tr = int(onset / self.dt)
+                    single_evoke = f * len(stim_onsets) + p
+                    splitted_data[i, j, k, single_evoke, :] = \
+                        voxel_data[onset_tr - bs_tr:onset_tr + ps_tr]
+
+                    # update reference (subject, session, and evoked train)
+                    self.splitted_ref[single_evoke] = self.input_ref[f] + [p]
+
+        return splitted_data
+
+    def convert_to_seaborn(self, roi_ts_dic, splitted):
+
+        import pandas as pd
+        df_list = []
+        idx = 0
+        for roi, value in roi_ts_dic.items():
+            for n, tsdata in enumerate(value):
+                for t, signal in enumerate(tsdata):
+                    if splitted:
+                        ref = self.splitted_ref
+                        data_dict = dict(ROI=roi,
+                                         Trial=ref[n][2],
+                                         Time=t * self.dt,
+                                         Signal=signal)
+
+                    else:
+                        ref = self.input_ref
+                        data_dict = dict(ROI=roi,
+                                         Time=t * self.dt,
+                                         Signal=signal)
+                    data_dict['Subj'] = ref[n][0]
+                    if self.dset.is_multi_session():
+                        data_dict['Sess'] = ref[n][1]
+                    df_list.append(pd.DataFrame(data_dict, index=[idx]))
+                    idx += 1
+
+        df = pd.concat(df_list)
+        if splitted:
+            if self.dset.is_multi_session():
+                df = df[['ROI', 'Subj', 'Sess', 'Trial', 'Time', 'Signal']]
+            else:
+                df = df[['ROI', 'Subj', 'Trial', 'Time', 'Signal']]
+        else:
+            if self.dset.is_multi_session():
+                df = df[['ROI', 'Subj', 'Sess', 'Time', 'Signal']]
+            else:
+                df = df[['ROI', 'Subj', 'Time', 'Signal']]
+        return df
+
+    def get_roi_timecourses(self, atlas_path, time_baseline, label_path=None,
+                            percent_change=True, stim_onsets=None, time_poststim=None,
+                            l=None, p=None, seaborn=True):
+        """
+
+        Args:
+            atlas_path(str):            roi segmentation file
+                                        if label has same filename with extension among 'txt', 'label', or 'lbl'
+                                        it will automatically import without label_path argument
+            label_path(str):            correspond label file generated from itksnap (default=None)
+            percent_change(bool):       if True, return percent change instead of signal
+            stim_onsets(list):          stimulation onset points with unit of second
+            time_baseline(int):         total time to use as baseline (second)
+                                        this parameter will be used to calculate baseline value
+            time_poststim(int):         total time to use as post stimulation datapoint (second)
+                                        this parameter will only be used when stim_onsets has value
+
+        Returns:
+            roi_ts(dict or df):         set of extracted time-courses data for each ROIs
+        """
+        import nibabel as nib
+        import numpy as np
+        import time
+
+        start = time.time()
+        from ..methods.tools import parse_label, parse_atlas
+
+        if stim_onsets is not None:
+            data = self._split_single_evoke(stim_onsets,
+                                            time_baseline, time_poststim)
+            splitted = True
+            ref = self.splitted_ref
+        else:
+            data = self._stack_all()
+            splitted = False
+            ref = self.input_ref
+
+        if label_path is None:
+            maskobj, rois, _ = parse_atlas(atlas_path)
+            mask = maskobj.get_data()
+        else:
+            mask = nib.load(atlas_path).get_data()
+            rois, _ = parse_label(label_path)
+
+        roi_ts = dict()
+        if self.calc_cbv:
+            cbv_df = self.cbv_dset.df
+        else:
+            cbv_df = None
+
+        bs_tr = int(time_baseline / self.dt)
+
+        for i, roi in rois.items():
+            if i is not 0:
+                indices = np.nonzero(mask == i)
+                if len(indices[0]) > 0:         # ignore if the label is empty mask
+                    tc = data[indices].mean(0)
+
+                    if cbv_df is not None:
+                        n_seg, t = tc.shape
+                        for s in range(n_seg):
+                            subj, sess = ref[s][:2]
+                            filtered_df = cbv_df.loc[cbv_df['Subject'].isin([subj])]
+                            if sess is not None:
+                                filtered_df = filtered_df.loc[filtered_df['Session'].isin([sess])].reset_index(drop=True)
+                            cbv_path = filtered_df.Abspath[0]
+                            cbv_mean = nib.load(cbv_path).get_data()[indices].mean()
+                            baseline_signal = tc[s, :bs_tr].mean()
+
+                            dR2_mion = np.log(baseline_signal / cbv_mean)
+                            dR2_stim = np.log(tc[s, :] / baseline_signal)
+                            tc[s, :] = dR2_stim/dR2_mion
+                            if percent_change is True:
+                                tc[s, :] = tc[s, :] * 100
+                    else:
+                        if percent_change is True:
+                            baseline = np.concatenate([tc[:, :bs_tr].mean(-1)[:, np.newaxis]] * tc.shape[-1], axis=-1)
+                            tc = (tc - baseline) / baseline * 100
+
+                    if l is not None:
+                        from ..methods.signal import als_detrend
+                        n_seg, t = tc.shape
+                        for s in range(n_seg):
+                            if p is None:
+                                baseline = tc[s, :bs_tr].mean()
+                                data = tc[s, :].mean()
+                                if baseline > data:
+                                    p = 0.999
+                                else:
+                                    p = 0.001
+                            det_tc = als_detrend(tc[s, :], l, p)
+                            tc[s, :] = det_tc - det_tc[:time_baseline].mean(0)
+                    roi_ts[roi] = tc
+
+        if seaborn is True:
+            roi_ts = self.convert_to_seaborn(roi_ts, splitted=splitted)
+            print('Converted to DataFrame.')
+        end = time.time()
+        print('Execution time: {} sec'.format(end - start))
+        return roi_ts
+

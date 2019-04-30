@@ -1,5 +1,5 @@
 from __future__ import division
-from .base import ImageBase, TimeSeriesBase
+from .base import ImageBase, TimeSeriesBase, GroupBase
 import numpy as np
 
 
@@ -159,3 +159,34 @@ class TimeSeriesHandler(TimeSeriesBase, HandlerBase):
     def __iter__(self):
         for col in self.df.columns:
             yield self.df[col]
+
+
+class GroupHandler(GroupBase, HandlerBase):
+    """
+    Group data handler class
+    """
+    def __init__(self, pipe, package, step_code, filter_dict=None, mask_path=None, dt=None):
+        super(GroupHandler, self).__init__(pipe, package, step_code, filter_dict, mask_path)
+        self.input_ref = dict()
+        self._set_dt(dt)
+
+    def _set_dt(self, dt):
+        if dt is None:
+            import nibabel as nib
+            self.dt = nib.load(self.dset[0].Abspath).header['pixdim'][4]
+        else:
+            self.dt = dt
+
+    def _stack_all(self):
+        import numpy as np
+        import nibabel as nib
+        data_list = []
+
+        for i, finfo in self.dset:
+            if self.dset.is_multi_session():
+                self.input_ref[i] = [finfo.Subject, finfo.Session]
+            else:
+                self.input_ref[i] = [finfo.Subject, None]
+            data_list.append(nib.load(finfo.Abspath).get_data()[:,:,:,np.newaxis,:])
+        return np.concatenate(data_list, axis=-2)
+
